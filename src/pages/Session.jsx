@@ -13,6 +13,7 @@ function Session() {
   const [started, setStarted] = useState(false)
   const [warmup, setWarmup] = useState(false)
   const [warmupSeconds, setWarmupSeconds] = useState(10)
+  const [ready, setReady] = useState(false)
   const videoRef = useRef(null)
 
   const eyeHistory = useRef([])
@@ -20,9 +21,9 @@ function Session() {
   const postureHistory = useRef([])
   const expressionHistory = useRef([])
 
-  const { eyeScore, expressionScore } = useMediaPipe(videoRef, true)
-  const { voiceScore, volume } = useAudioAnalyzer(true)
-  const { postureScore } = usePosture(videoRef, true)
+  const { eyeScore, expressionScore } = useMediaPipe(videoRef, ready)
+  const { voiceScore, volume } = useAudioAnalyzer(ready)
+  const { postureScore } = usePosture(videoRef, ready)
 
   const eyeScoreRef = useRef(eyeScore)
   const voiceScoreRef = useRef(voiceScore)
@@ -34,10 +35,14 @@ function Session() {
   useEffect(() => { postureScoreRef.current = postureScore }, [postureScore])
   useEffect(() => { expressionScoreRef.current = expressionScore }, [expressionScore])
 
+  // เปิดกล้อง + รอ 1 วิก่อน ready
   useEffect(() => {
     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       .then(stream => {
-        if (videoRef.current) videoRef.current.srcObject = stream
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          setTimeout(() => setReady(true), 1000)
+        }
       })
       .catch(err => console.error('Camera error:', err))
     return () => {
@@ -151,6 +156,12 @@ function Session() {
         <div className="relative w-full aspect-video rounded-3xl overflow-hidden mb-6" style={{backgroundColor: '#111827'}}>
           <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover scale-x-[-1]" />
 
+          {!ready && (
+            <div className="absolute inset-0 flex items-center justify-center" style={{backgroundColor: 'rgba(0,0,0,0.7)'}}>
+              <p className="text-gray-400 text-sm">กำลังเปิดกล้อง...</p>
+            </div>
+          )}
+
           {countdown !== null && (
             <div className="absolute inset-0 flex items-center justify-center" style={{backgroundColor: 'rgba(0,0,0,0.6)'}}>
               <span className="text-white font-bold" style={{fontSize: '8rem'}}>{countdown}</span>
@@ -188,7 +199,7 @@ function Session() {
             </div>
           )}
 
-          {!started && countdown === null && (
+          {ready && !started && countdown === null && (
             <div className="absolute inset-0 flex items-center justify-center">
               <p className="text-gray-500">กด "เริ่มบันทึก" เพื่อเริ่ม</p>
             </div>
@@ -208,7 +219,7 @@ function Session() {
           ))}
         </div>
 
-        {!started && countdown === null && (
+        {ready && !started && countdown === null && (
           <button onClick={handleStart} className="w-full py-4 rounded-2xl text-white text-lg font-semibold" style={{backgroundColor: '#4f46e5'}}>
             🎙 เริ่มบันทึก
           </button>

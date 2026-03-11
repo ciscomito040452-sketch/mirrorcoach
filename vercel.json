@@ -1,0 +1,13 @@
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+```
+
+บันทึกแล้วไปที่ Command Prompt พิมพ์:
+```
+cd C:\Users\Ken\mirrorcoach
+git add .
+git commit -m "fix routing"
+git push
